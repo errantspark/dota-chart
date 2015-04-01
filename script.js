@@ -74,17 +74,16 @@ merges[7] = render_heat;
 var make_renderer = function(hero_array,merge_gen_array){
   return hero_array.map(function(hero,i){
     return hero.map(function(value, j){
-      if (merge_gen_array[i] === undefined){
+      if (merge_gen_array[j] === undefined){
         return std_render(value, j)
       }else{
-        return merge_gen_array[i](value, j, i, hero_array)
+        return merge_gen_array[j](value, j, i, hero_array)
       }
     })
   })
 
 }
 
-var champs = make_renderer(heroes, merges);
 
 var viewhero = function(x){
   heroes[x].forEach(function(x,i){console.log(index[i]+": "+x)})
@@ -118,14 +117,15 @@ var sorter = function(x){
       heroes = heroes.reverse()
     }
     desc = !desc;
-    tableCreate();
+    tableCreate2();
   }
   return ret;
 }
 var sorts = [];
 sorts = index.map(function(d, i){return sorter(i)})
 function tableCreate2(){
-   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
+  var champs = make_renderer(heroes, merges);
+  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
   var body = document.getElementsByTagName('body')[0],
       tbl  = document.createElement('table');
 
