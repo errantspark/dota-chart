@@ -46,25 +46,41 @@ var handle_movespeed = (function(heros){
 //
 //yes this is a good idea because if i add a column to i can simply add a styling
 //function and then the renderer just runs a the corresponding function agnostically
-var std_render = function(datum, index, whole_table){
+var std_render = function(datum, index, heroindex, whole_table){
   return function(tr){
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(datum))
   }
 }
 
+
+var render_heat = function(datum, index, heroindex, whole_table){
+   var heat_scale = chroma.scale(['lightblue', 'khaki' ,  'salmon']);
+   var x_tract = whole_table.map(function(d){return d[index]});
+   var max = Math.max.apply(null, x_tract);
+   var min = Math.min.apply(null, x_tract);
+   var normalize_val = function(x){return (x-min)/(max-min)}
+   return function(tr){
+      var td = tr.insertCell();
+      td.appendChild(document.createTextNode(datum))
+      td.style.background = heat_scale(normalize_val(datum))
+   }
+}
+
+
 var merges = new Array(20);
+merges[7] = render_heat;
 
 var make_renderer = function(hero_array,merge_gen_array){
-  if (hero_array[0].length !== merge_gen_array.length){
-    throw "ARRAY SIZE MISMATCH";
-    return;
-  }
   return hero_array.map(function(hero,i){
-    return hero.map(function(value, i){
-      return std_render(value, i)
-      })
+    return hero.map(function(value, j){
+      if (merge_gen_array[i] === undefined){
+        return std_render(value, j)
+      }else{
+        return merge_gen_array[i](value, j, i, hero_array)
+      }
     })
+  })
 
 }
 
@@ -91,7 +107,7 @@ return y[8]-x[8]}
 
 var mov_scale =  create_rescale(8); 
 var atkp_scale = create_rescale(15);
-var coscale = chroma.scale(['lightblue', 'khaki' ,  'salmon']);
+
 
 var sorter = function(x){
   var desc = true;
