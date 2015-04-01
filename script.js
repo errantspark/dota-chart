@@ -117,14 +117,18 @@ var sorter = function(x){
       heroes = heroes.reverse()
     }
     desc = !desc;
-    tableCreate2();
+    var m = [];
+    m[x] = render_heat;
+    var render = make_renderer(heroes, m);
+    render_table(render);
   }
   return ret;
 }
 var sorts = [];
 sorts = index.map(function(d, i){return sorter(i)})
-function tableCreate2(){
-  var champs = make_renderer(heroes, merges);
+var def_render = make_renderer(heroes, merges);
+
+var render_table = function(renderer){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
   var body = document.getElementsByTagName('body')[0],
       tbl  = document.createElement('table');
@@ -139,14 +143,14 @@ function tableCreate2(){
     var tr = tbl.insertRow();
     for(var j = 0; j < 20; j++){
       //render
-      champs[i][j](tr);
+      renderer[i][j](tr);
     }
   }
   body.appendChild(tbl);
 }
 
-document.onready = tableCreate2();
-function tableCreate(){
+document.onready = render_table(def_render);
+/*function tableCreate(){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
   var body = document.getElementsByTagName('body')[0],
       tbl  = document.createElement('table');
@@ -213,5 +217,5 @@ function tableCreate(){
 }
 
 //document.onready = tableCreate();
-
+*/
 
