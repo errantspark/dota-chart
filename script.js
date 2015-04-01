@@ -93,6 +93,23 @@ var render_heat = function(datum, index, heroindex, whole_table){
       td.style.background = heat_scale(normalize_val(datum))
    }
 }
+
+var render_heat_attr = function(datum, index, heroindex, whole_table){
+   var heat_scale = chroma.scale(['lightblue', 'khaki' ,  'salmon']);
+   var x_tract = whole_table.map(function(d){return d[index]});
+   var max = Math.max.apply(null, x_tract);
+   var min = Math.min.apply(null, x_tract);
+   var normalize_val = function(x){return (x-min)/(max-min)}
+   return function(tr){
+      var td = tr.insertCell();
+      td.appendChild(document.createTextNode(datum))
+      td.style.background = heat_scale(normalize_val(datum))
+      if (index === (whole_table[heroindex][1]+1)*2 || index === (whole_table[heroindex][1]+1)*2+1){
+             td.style.fontWeight = "bold";
+           }
+   }
+}
+
 var render_main_attr = function(datum){
   var color;
   switch (datum) {
@@ -116,6 +133,9 @@ var def_views = new Array(20);
 
 for (var i = 2; i < 17; i++){
   def_views[i] = render_heat;
+}
+for (var i = 2; i < 8; i++){
+  def_views[i] = render_heat_attr;
 }
 def_views[19] = render_heat;
 def_views[1] = render_main_attr;
