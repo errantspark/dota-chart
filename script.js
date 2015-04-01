@@ -19,22 +19,36 @@ var index = [ "Hero     ",
               "Turn rate",
               "Collision"]
 
+var viewhero = function(x){
+  heroes[x].forEach(function(x,i){console.log(index[i]+": "+x)})
+}
+
+var sorts = {};
+sorts.damage_variability = function(x,y){
+return Math.abs(y[11]-y[12])-Math.abs(x[11]-x[12])}
+
+sorts.base_stat = function(x,y){
+return y[(y[1]+1)*2]-x[(x[1]+1)*2]}
+
+sorts.base_stat_growth = function(x,y){
+return y[(y[1]+1)*2+1]-x[(x[1]+1)*2+1]}
+
+sorts.combined_stat_growth = function(x,y){
+return (y[3]+y[5]+y[7])-(x[3]+x[5]+x[7])}
+
+sorts.movespeed = function(x,y){
+return y[8]-x[8]}
+
 //DESIGN NOTES: I want to keep the hero data as raw as possible and have a few
 //functions the serve as "views" to transpose the data into a reasonable format
 //and then render that, the "reasonable format" should be an object that
 //has a .render function that gets passed an element and styles it
 
-var create_rescale = function(idx){
-  var x_tract = heroes.map(function(d){return d[idx]});
-  var max = Math.max.apply(null, x_tract);
-  var min = Math.min.apply(null, x_tract);
-  return function(x){return (x-min)/(max-min)}
-}
-
-var handle_movespeed = (function(heros){
-  var rescale_ms = create_rescale(8);
-  return ;
-})(heroes);
+heroes = heroes.map(function(x,i){
+  x.splice(13,0,(x[12]-x[11]))
+  return x
+})
+index.splice(13,0,"DMG Delta")
 
 //this function is kind of a matrix thing where it takes a heroes and a 
 //a mapping array where the array is a set of [20] functions that determine the 
@@ -46,13 +60,26 @@ var handle_movespeed = (function(heros){
 //
 //yes this is a good idea because if i add a column to i can simply add a styling
 //function and then the renderer just runs a the corresponding function agnostically
+var make_renderer = function(hero_array,view_gen_array){
+  return hero_array.map(function(hero,i){
+    return hero.map(function(value, j){
+      if (view_gen_array[j] === undefined){
+        return std_render(value, j)
+      }else if (view_gen_array[j] === null){
+        return function(){}
+      }else {
+        return view_gen_array[j](value, j, i, hero_array)
+      }
+    })
+  })
+}
+
 var std_render = function(datum, index, heroindex, whole_table){
   return function(tr){
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(datum))
   }
 }
-
 
 var render_heat = function(datum, index, heroindex, whole_table){
    var heat_scale = chroma.scale(['lightblue', 'khaki' ,  'salmon']);
@@ -66,46 +93,36 @@ var render_heat = function(datum, index, heroindex, whole_table){
       td.style.background = heat_scale(normalize_val(datum))
    }
 }
-
-
-var merges = new Array(20);
-merges[7] = render_heat;
-
-var make_renderer = function(hero_array,merge_gen_array){
-  return hero_array.map(function(hero,i){
-    return hero.map(function(value, j){
-      if (merge_gen_array[j] === undefined){
-        return std_render(value, j)
-      }else{
-        return merge_gen_array[j](value, j, i, hero_array)
-      }
-    })
-  })
-
+var render_main_attr = function(datum){
+  var color;
+  switch (datum) {
+    case 0:
+      color = "#ED201E";
+      break;
+    case 1:
+      color = "#397737";
+      break;
+    case 2:
+      color = "#1788B0";
+      break;
+  }
+  return function(tr){
+    var td = tr.insertCell();
+    td.style.background = color;
+  }
 }
+//defaults
+var def_views = new Array(20);
 
-
-var viewhero = function(x){
-  heroes[x].forEach(function(x,i){console.log(index[i]+": "+x)})
+for (var i = 2; i < 17; i++){
+  def_views[i] = render_heat;
 }
-var sort = {};
-sort.damage_variability = function(x,y){
-return Math.abs(y[11]-y[12])-Math.abs(x[11]-x[12])}
+def_views[19] = render_heat;
+def_views[1] = render_main_attr;
 
-sort.base_stat = function(x,y){
-return y[(y[1]+1)*2]-x[(x[1]+1)*2]}
+var def_render = make_renderer(heroes, def_views);
 
-sort.base_stat_growth = function(x,y){
-return y[(y[1]+1)*2+1]-x[(x[1]+1)*2+1]}
 
-sort.combined_stat_growth = function(x,y){
-return (y[3]+y[5]+y[7])-(x[3]+x[5]+x[7])}
-
-sort.movespeed = function(x,y){
-return y[8]-x[8]}
-
-var mov_scale =  create_rescale(8); 
-var atkp_scale = create_rescale(15);
 
 
 var sorter = function(x){
@@ -117,16 +134,16 @@ var sorter = function(x){
       heroes = heroes.reverse()
     }
     desc = !desc;
-    var m = [];
-    m[x] = render_heat;
+    var m = def_views.slice();
+    m[x] = m[x] || render_heat;
     var render = make_renderer(heroes, m);
     render_table(render);
   }
   return ret;
 }
-var sorts = [];
-sorts = index.map(function(d, i){return sorter(i)})
-var def_render = make_renderer(heroes, merges);
+
+var sorters = [];
+sorters = index.map(function(d, i){return sorter(i)})
 
 var render_table = function(renderer){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
@@ -134,14 +151,14 @@ var render_table = function(renderer){
       tbl  = document.createElement('table');
 
   var tr = tbl.insertRow();
-  for(var j = 0; j < 20; j++){
+  for(var j = 0; j < index.length; j++){
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(index[j]));
-    td.addEventListener("click", sorts[j])
+    td.addEventListener("click", sorters[j])
   }
   for(var i = 0; i < heroes.length; i++){
     var tr = tbl.insertRow();
-    for(var j = 0; j < 20; j++){
+    for(var j = 0; j < heroes[i].length; j++){
       //render
       renderer[i][j](tr);
     }
@@ -150,72 +167,3 @@ var render_table = function(renderer){
 }
 
 document.onready = render_table(def_render);
-/*function tableCreate(){
-  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
-  var body = document.getElementsByTagName('body')[0],
-      tbl  = document.createElement('table');
-
-  var tr = tbl.insertRow();
-  for(var j = 0; j < 20; j++){
-    var td = tr.insertCell();
-    td.appendChild(document.createTextNode(index[j]));
-    td.addEventListener("click", sorts[j])
-  }
-  for(var i = 0; i < heroes.length; i++){
-    var tr = tbl.insertRow();
-    for(var j = 0; j < 20; j++){
-      //render
-      //table[i][j](tr);
-      var td = tr.insertCell();
-      switch (j){
-        case 1:
-          switch (heroes[i][j]) {
-            case 0:
-              td.style.background = "#ED201E";
-              break;
-            case 1:
-              td.style.background = "#397737";
-              break;
-            case 2:
-              td.style.background = "#1788B0";
-              break;
-          }
-          break;
-        case 8:
-          td.appendChild(document.createTextNode(heroes[i][j]));
-          td.style.background = coscale(mov_scale(heroes[i][j]));
-          break;
-        case 15:
-          td.appendChild(document.createTextNode(heroes[i][j]));
-          td.style.background = coscale(atkp_scale(heroes[i][j]));
-          break;
-        case 13:
-          if (heroes[i][j] === 0){
-            td.appendChild(document.createTextNode("Melee"))
-          } else {
-            td.appendChild(document.createTextNode(heroes[i][j]));
-          }
-          break;
-        case 14:
-          if (heroes[i][j] === 0){
-            td.appendChild(document.createTextNode("-"));
-          } else {
-            td.appendChild(document.createTextNode(heroes[i][j]));
-          }
-          break;
-
-        default: 
-          td.appendChild(document.createTextNode(heroes[i][j]));
-          if (j === (heroes[i][1]+1)*2 || j === (heroes[i][1]+1)*2+1){
-            td.style.fontWeight = "bold";
-          }
-          break;
-      }
-    }
-  }
-  body.appendChild(tbl);
-}
-
-//document.onready = tableCreate();
-*/
-
