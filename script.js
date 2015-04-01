@@ -19,6 +19,26 @@ var index = [ "Hero     ",
               "Turn rate",
               "Collision"]
 
+//DESIGN NOTES: I want to keep the hero data as raw as possible and have a few
+//functions the serve as "views" to transpose the data into a reasonable format
+//and then render that, the "reasonable format" should be an object that
+//has a .render function that gets passed an element and styles it
+
+var create_rescale = function(idx){
+  var x_tract = heroes.map(function(d){return d[idx]});
+  var max = Math.max.apply(null, x_tract);
+  var min = Math.min.apply(null, x_tract);
+  return function(x){return (x-min)/(max-min)}
+}
+var handle_movespeed = (function(heros){
+  heros.forEach(function(x
+  return null;
+})(heroes);
+var champs = heroes.map(function(x,i){
+  { name: x[0],
+    index: i
+
+}
 var viewhero = function(x){
   heroes[x].forEach(function(x,i){console.log(index[i]+": "+x)})
 }
@@ -38,76 +58,89 @@ return (y[3]+y[5]+y[7])-(x[3]+x[5]+x[7])}
 sort.movespeed = function(x,y){
 return y[8]-x[8]}
 
-var create_rescale = function(idx){
-  var x_tract = heroes.map(function(d){return d[idx]});
-  var max = Math.max.apply(null, x_tract);
-  var min = Math.min.apply(null, x_tract);
-  return function(x){return (x-min)/(max-min)}
-}
 var mov_scale = create_rescale(8);
 var atkp_scale = create_rescale(15);
 var coscale = chroma.scale(['lightblue', 'khaki' ,  'salmon']);
+
+var sorter = function(x){
+  var desc = true;
+  var ret = function(){ 
+    var test = "lol";
+    heroes.sort(function(n,m){return m[x]-n[x]})
+    if (!desc){
+      heroes = heroes.reverse()
+    }
+    desc = !desc;
+    tableCreate();
+  }
+  return ret;
+}
+var sorts = [];
+sorts = index.map(function(d, i){return sorter(i)})
+
+
 function tableCreate(){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
-        var body = document.getElementsByTagName('body')[0],
-            tbl  = document.createElement('table');
+  var body = document.getElementsByTagName('body')[0],
+      tbl  = document.createElement('table');
 
-         var tr = tbl.insertRow();
-            for(var j = 0; j < 20; j++){
-                    var td = tr.insertCell();
-                    td.appendChild(document.createTextNode(index[j]));
-            }
-        for(var i = 0; i < heroes.length; i++){
-            var tr = tbl.insertRow();
-            for(var j = 0; j < 20; j++){
-                    var td = tr.insertCell();
-                    switch (j){
-                      case 1:
-                        switch (heroes[i][j]) {
-                          case 0:
-                            td.style.background = "#ED201E";
-                            break;
-                          case 1:
-                            td.style.background = "#1788B0";
-                            break;
-                          case 2:
-                            td.style.background = "#397737";
-                            break;
-                        }
-                        break;
-                      case 8:
-                          td.appendChild(document.createTextNode(heroes[i][j]));
-                          td.style.background = coscale(mov_scale(heroes[i][j]));
-                        break;
-                      case 15:
-                          td.appendChild(document.createTextNode(heroes[i][j]));
-                          td.style.background = coscale(atkp_scale(heroes[i][j]));
-                        break;
-                      case 13:
-                        if (heroes[i][j] === 0){
-                          td.appendChild(document.createTextNode("Melee"))
-                        } else {
-                          td.appendChild(document.createTextNode(heroes[i][j]));
-                        }
-                        break;
-                      case 14:
-                        if (heroes[i][j] === 0){
-                          td.appendChild(document.createTextNode("-"));
-                        } else {
-                          td.appendChild(document.createTextNode(heroes[i][j]));
-                        }
-                        break;
+  var tr = tbl.insertRow();
+  for(var j = 0; j < 20; j++){
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(index[j]));
+    td.addEventListener("click", sorts[j])
+  }
+  for(var i = 0; i < heroes.length; i++){
+    var tr = tbl.insertRow();
+    for(var j = 0; j < 20; j++){
+      var td = tr.insertCell();
+      switch (j){
+        case 1:
+          switch (heroes[i][j]) {
+            case 0:
+              td.style.background = "#ED201E";
+              break;
+            case 1:
+              td.style.background = "#397737";
+              break;
+            case 2:
+              td.style.background = "#1788B0";
+              break;
+          }
+          break;
+        case 8:
+          td.appendChild(document.createTextNode(heroes[i][j]));
+          td.style.background = coscale(mov_scale(heroes[i][j]));
+          break;
+        case 15:
+          td.appendChild(document.createTextNode(heroes[i][j]));
+          td.style.background = coscale(atkp_scale(heroes[i][j]));
+          break;
+        case 13:
+          if (heroes[i][j] === 0){
+            td.appendChild(document.createTextNode("Melee"))
+          } else {
+            td.appendChild(document.createTextNode(heroes[i][j]));
+          }
+          break;
+        case 14:
+          if (heroes[i][j] === 0){
+            td.appendChild(document.createTextNode("-"));
+          } else {
+            td.appendChild(document.createTextNode(heroes[i][j]));
+          }
+          break;
 
-                      default: 
-                        td.appendChild(document.createTextNode(heroes[i][j]));
-                        if (j === (heroes[i][1]+1)*2 || j === (heroes[i][1]+1)*2+1){
-                          td.style.fontWeight = "bold";
-                        }
-                        break;
-                    }
-            }
-        }
-        body.appendChild(tbl);
+        default: 
+          td.appendChild(document.createTextNode(heroes[i][j]));
+          if (j === (heroes[i][1]+1)*2 || j === (heroes[i][1]+1)*2+1){
+            td.style.fontWeight = "bold";
+          }
+          break;
+      }
+    }
+  }
+  body.appendChild(tbl);
 }
 
 document.onready = tableCreate();
