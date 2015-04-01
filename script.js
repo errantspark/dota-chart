@@ -30,15 +30,46 @@ var create_rescale = function(idx){
   var min = Math.min.apply(null, x_tract);
   return function(x){return (x-min)/(max-min)}
 }
+
 var handle_movespeed = (function(heros){
-  heros.forEach(function(x
-  return null;
+  var rescale_ms = create_rescale(8);
+  return ;
 })(heroes);
-var champs = heroes.map(function(x,i){
-  { name: x[0],
-    index: i
+
+//this function is kind of a matrix thing where it takes a heroes and a 
+//a mapping array where the array is a set of [20] functions that determine the 
+//rendering by each taking an element (a td) and styling it/adding info
+//this is passed an already sorted array?
+//yes it makes sense because you might want to change the look of the table
+//based on a sort and thus it makes sense to sort -> pass into combiner function
+//that takes the table and genertes rendering rules
+//
+//yes this is a good idea because if i add a column to i can simply add a styling
+//function and then the renderer just runs a the corresponding function agnostically
+var std_render = function(datum, index, whole_table){
+  return function(tr){
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(datum))
+  }
+}
+
+var merges = new Array(20);
+
+var make_renderer = function(hero_array,merge_gen_array){
+  if (hero_array[0].length !== merge_gen_array.length){
+    throw "ARRAY SIZE MISMATCH";
+    return;
+  }
+  return hero_array.map(function(hero,i){
+    return hero.map(function(value, i){
+      return std_render(value, i)
+      })
+    })
 
 }
+
+var champs = make_renderer(heroes, merges);
+
 var viewhero = function(x){
   heroes[x].forEach(function(x,i){console.log(index[i]+": "+x)})
 }
@@ -58,7 +89,7 @@ return (y[3]+y[5]+y[7])-(x[3]+x[5]+x[7])}
 sort.movespeed = function(x,y){
 return y[8]-x[8]}
 
-var mov_scale = create_rescale(8);
+var mov_scale =  create_rescale(8); 
 var atkp_scale = create_rescale(15);
 var coscale = chroma.scale(['lightblue', 'khaki' ,  'salmon']);
 
@@ -77,8 +108,28 @@ var sorter = function(x){
 }
 var sorts = [];
 sorts = index.map(function(d, i){return sorter(i)})
+function tableCreate2(){
+   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
+  var body = document.getElementsByTagName('body')[0],
+      tbl  = document.createElement('table');
 
+  var tr = tbl.insertRow();
+  for(var j = 0; j < 20; j++){
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(index[j]));
+    td.addEventListener("click", sorts[j])
+  }
+  for(var i = 0; i < heroes.length; i++){
+    var tr = tbl.insertRow();
+    for(var j = 0; j < 20; j++){
+      //render
+      champs[i][j](tr);
+    }
+  }
+  body.appendChild(tbl);
+}
 
+document.onready = tableCreate2();
 function tableCreate(){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
   var body = document.getElementsByTagName('body')[0],
@@ -93,6 +144,8 @@ function tableCreate(){
   for(var i = 0; i < heroes.length; i++){
     var tr = tbl.insertRow();
     for(var j = 0; j < 20; j++){
+      //render
+      //table[i][j](tr);
       var td = tr.insertCell();
       switch (j){
         case 1:
@@ -143,6 +196,6 @@ function tableCreate(){
   body.appendChild(tbl);
 }
 
-document.onready = tableCreate();
+//document.onready = tableCreate();
 
 
