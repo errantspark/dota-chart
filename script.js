@@ -1,4 +1,4 @@
-var index = [ "Hero     ",
+var old_index = [ "Hero     ",
               "Main Attr",
               "Base Str ",
               "Str Grow ",
@@ -18,6 +18,11 @@ var index = [ "Hero     ",
               "Night SR ",
               "Turn rate",
               "Collision"]
+
+var index = ["Name"," ","Str","Str+","Agi","Agi+","Int","Int+","MS","Armor","BAT","Dmg Min","Dmg Max","Range","Missle Speed","Attack Point","Day Sight","Night Sight","Turn Rate","Collision"] 
+
+var col_w = new Array(20);
+col_w[0] = [80]
 
 var viewhero = function(x){
   heroes[x].forEach(function(x,i){console.log(index[i]+": "+x)})
@@ -75,9 +80,10 @@ var make_renderer = function(hero_array,view_gen_array){
 }
 
 var std_render = function(datum, index, heroindex, whole_table){
-  return function(tr){
+  return function(tr,cb){
     var td = tr.insertCell();
-    td.appendChild(document.createTextNode(datum))
+    td.appendChild(document.createTextNode(datum));
+    cb(td);
   }
 }
 
@@ -87,10 +93,11 @@ var render_heat = function(datum, index, heroindex, whole_table){
    var max = Math.max.apply(null, x_tract);
    var min = Math.min.apply(null, x_tract);
    var normalize_val = function(x){return (x-min)/(max-min)}
-   return function(tr){
+   return function(tr,cb){
       var td = tr.insertCell();
       td.appendChild(document.createTextNode(datum))
       td.style.background = heat_scale(normalize_val(datum))
+      cb(td);
    }
 }
 
@@ -100,13 +107,14 @@ var render_heat_attr = function(datum, index, heroindex, whole_table){
    var max = Math.max.apply(null, x_tract);
    var min = Math.min.apply(null, x_tract);
    var normalize_val = function(x){return (x-min)/(max-min)}
-   return function(tr){
+   return function(tr,cb){
       var td = tr.insertCell();
       td.appendChild(document.createTextNode(datum))
       td.style.background = heat_scale(normalize_val(datum))
       if (index === (whole_table[heroindex][1]+1)*2 || index === (whole_table[heroindex][1]+1)*2+1){
              td.style.fontWeight = "bold";
            }
+      cb(td);
    }
 }
 
@@ -123,9 +131,10 @@ var render_main_attr = function(datum){
       color = "#1788B0";
       break;
   }
-  return function(tr){
+  return function(tr,cb){
     var td = tr.insertCell();
     td.style.background = color;
+    cb(td);
   }
 }
 //defaults
@@ -172,21 +181,43 @@ var render_table = function(renderer){
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(index[j]));
     td.addEventListener("click", sorters[j])
+    if (col_w[j]){
+          td.style.width = col_w[j]+"px"
+          td.style.maxWidth = col_w[j]+"px"
+        } else {
+          td.style.width = "30px"
+          td.style.maxWidth = "30px"
+        }
   }
 
   headtable.appendChild(headers);
   var table = document.getElementById('table'),
       tbl  = document.createElement('table');
 
-  var tr = tbl.insertRow();
- 
   for(var i = 0; i < renderer.length; i++){
     var tr = tbl.insertRow();
     for(var j = 0; j < renderer[i].length; j++){
-      renderer[i][j](tr);
+      var td = renderer[i][j](tr, function(x){
+        if (col_w[j]){
+          x.style.width = col_w[j]+"px"
+          x.style.maxWidth = col_w[j]+"px"
+        } else {
+          x.style.width = "30px"
+          x.style.maxWidth = "30px"
+        }
+      });
     }
+
   }
   table.appendChild(tbl);
 }
 
+window.onscroll = function(x){
+  if (window.scrollY <= 60){   
+    header.style.marginTop = "-"+window.scrollY+"px"
+  } else if (window.scrollY > 60 && header.style.marginTop !== "-60px") {
+  header.style.marginTop = "-60px"
+  }
+
+}
 document.onready = render_table(def_render);
