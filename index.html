@@ -1,9 +1,15 @@
 <head>
   <style>
-    table{
+    body {
+      font-size: 16px;
+      margin: 0px;
+    }
+    table {
+      margin: 10px;
+      margin-top: 0px;
       border-collapse:collapse
     }
-    tbody{
+    tbody {
       border: 1px solid #333;
     }
     tr:nth-child(even) {
@@ -17,9 +23,24 @@
       border-right: 1px dashed #aaa;
       text-align: center;
     }
+    #header {
+      background: crimson;
+      height: 7em;
+      width: 100%;
+      position: fixed;
+    }
+    #headerspacer {
+      height: 7em;
+      margin: 0px;
+    }
   </style>
 </head>
 <body>
+  <div id="header">
+    <div id="tablehead"></div>
+  </div>
+  <div id="headerspacer"></div>
+  <div id="table"></div>
   <script type="text/javascript" src="chroma.min.js"></script>
   <script type="text/javascript" src="heroes.js"></script>
   <script type="text/javascript" src="script.js"></script>

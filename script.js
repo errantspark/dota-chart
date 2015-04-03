@@ -142,9 +142,6 @@ def_views[1] = render_main_attr;
 
 var def_render = make_renderer(heroes, def_views);
 
-
-
-
 var sorter = function(x){
   var desc = true;
   var ret = function(){ 
@@ -167,23 +164,29 @@ sorters = index.map(function(d, i){return sorter(i)})
 
 var render_table = function(renderer){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
-  var body = document.getElementsByTagName('body')[0],
-      tbl  = document.createElement('table');
+   var headtable = document.getElementById('tablehead'),
+      headers  = document.createElement('table');
 
-  var tr = tbl.insertRow();
-  for(var j = 0; j < index.length; j++){
+  var tr = headers.insertRow();
+   for(var j = 0; j < index.length; j++){
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(index[j]));
     td.addEventListener("click", sorters[j])
   }
-  for(var i = 0; i < heroes.length; i++){
+
+  headtable.appendChild(headers);
+  var table = document.getElementById('table'),
+      tbl  = document.createElement('table');
+
+  var tr = tbl.insertRow();
+ 
+  for(var i = 0; i < renderer.length; i++){
     var tr = tbl.insertRow();
-    for(var j = 0; j < heroes[i].length; j++){
-      //render
+    for(var j = 0; j < renderer[i].length; j++){
       renderer[i][j](tr);
     }
   }
-  body.appendChild(tbl);
+  table.appendChild(tbl);
 }
 
 document.onready = render_table(def_render);
