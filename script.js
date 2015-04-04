@@ -19,10 +19,30 @@ var old_index = [ "Hero     ",
               "Turn rate",
               "Collision"]
 
-var index = ["Name"," ","Str","Str+","Agi","Agi+","Int","Int+","MS","Armor","BAT","Dmg Min","Dmg Max","Range","Missle Speed","Attack Point","Day Sight","Night Sight","Turn Rate","Collision"] 
+var nice_index = ["Name"," ","Str","Str+","Agi","Agi+","Int","Int+","MS","Armor","BAT","Dmg Min","Dmg Max","Range","Missle Speed","Attack Point","Day Sight","Night Sight","Turn Rate","Collision"] 
+var index = ["name","main_stat","str","str_gain","agi","agi_gain","int","int_gain","movespeed","base_armor","base_attack_time","dmg_min","dmg_max","attack_range","missile_speed","attack_point","day_sight","night_sight","turn_rate","collision_size"] 
+heroes = heroes.map(function(x,i){
+  x.splice(13,0,(x[12]-x[11]))
+  return x
+})
+index.splice(13,0,"dmg_vari")
+var zip_to_object = function(name_array, obj_array, idx){
+  var output = {}
+  name_array.forEach(function(x,i){output[x] = obj_array[i]})
+  output.index = idx;
+  return output;
+}
+
+hero_obj = heroes.map(function(x, i){return zip_to_object(index, x, i)}) 
+
+var find_in = function(term, column, array){
+  var lookup = array.map(function(x){return x[column];})
+  return lookup.indexOf(term) 
+} 
 
 var col_w = new Array(20);
 col_w[0] = [80]
+
 
 var viewhero = function(x){
   heroes[x].forEach(function(x,i){console.log(index[i]+": "+x)})
@@ -49,11 +69,6 @@ return y[8]-x[8]}
 //and then render that, the "reasonable format" should be an object that
 //has a .render function that gets passed an element and styles it
 
-heroes = heroes.map(function(x,i){
-  x.splice(13,0,(x[12]-x[11]))
-  return x
-})
-index.splice(13,0,"DMG Delta")
 
 //this function is kind of a matrix thing where it takes a heroes and a 
 //a mapping array where the array is a set of [20] functions that determine the 
@@ -170,7 +185,7 @@ var sorter = function(x){
 
 var sorters = [];
 sorters = index.map(function(d, i){return sorter(i)})
-
+//var newrender = function(hero_array,
 var render_table = function(renderer){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
    var headtable = document.getElementById('tablehead'),
@@ -212,12 +227,14 @@ var render_table = function(renderer){
   table.appendChild(tbl);
 }
 
-window.onscroll = function(x){
+window.onscroll = function(){
+  window.requestAnimationFrame(function(){ 
   if (window.scrollY <= 60){   
     header.style.marginTop = "-"+window.scrollY+"px"
   } else if (window.scrollY > 60 && header.style.marginTop !== "-60px") {
   header.style.marginTop = "-60px"
   }
+  })
 
 }
 document.onready = render_table(def_render);
