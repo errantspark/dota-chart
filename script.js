@@ -19,13 +19,17 @@ var old_index = [ "Hero     ",
               "Turn rate",
               "Collision"]
 
-var nice_index = ["Name"," ","Str","Str+","Agi","Agi+","Int","Int+","MS","Armor","BAT","Dmg Min","Dmg Max","Range","Missle Speed","Attack Point","Day Sight","Night Sight","Turn Rate","Collision"] 
+var nice_index = ["Name","Main Stat","Str","Str+","Agi","Agi+","Int","Int+","Movement Speed","Armor","Base Attack Time","Dmg Min","Dmg Max","Range","Missle Speed","Attack Point","Day Sight","Night Sight","Turn Rate","Collision"] 
 var index = ["name","main_stat","str","str_gain","agi","agi_gain","int","int_gain","movespeed","base_armor","base_attack_time","dmg_min","dmg_max","attack_range","missile_speed","attack_point","day_sight","night_sight","turn_rate","collision_size"] 
+
+//add a damage variance column to the hero table
 heroes = heroes.map(function(x,i){
   x.splice(13,0,(x[12]-x[11]))
   return x
 })
 index.splice(13,0,"dmg_vari")
+nice_index.splice(13,0,"Damage Variance")
+
 var zip_to_object = function(name_array, obj_array, idx){
   var output = {}
   name_array.forEach(function(x,i){output[x] = obj_array[i]})
@@ -153,8 +157,11 @@ var render_main_attr = function(datum){
   }
 }
 //defaults
-var def_views = new Array(20);
+var def_views = [];
 
+for (var i = 0; i < 21; i++){
+  def_views[i] = std_render;
+}
 for (var i = 2; i < 17; i++){
   def_views[i] = render_heat;
 }
@@ -185,11 +192,52 @@ var sorter = function(x){
 
 var sorters = [];
 sorters = index.map(function(d, i){return sorter(i)})
-//var newrender = function(hero_array,
+var newrender = function(hero_array, render_array, columns, col_names){
+  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()});
+  var headtable = document.getElementById('tablehead'),
+      headers  = document.createElement('table');
+
+  var tr = headers.insertRow();
+  for(var j = 0; j < index.length; j++){
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(col_names[j]));
+    td.addEventListener("click", sorters[j])
+      if (col_w[j]){
+        td.style.width = col_w[j]+"px"
+          td.style.maxWidth = col_w[j]+"px"
+        } else {
+          td.style.width = "30px"
+          td.style.maxWidth = "30px"
+        }
+  }
+  
+  headtable.appendChild(headers);
+  var table = document.getElementById('table'),
+      tbl  = document.createElement('table');
+
+  for(var i = 0; i < hero_array.length; i++){
+    var tr = tbl.insertRow();
+    for(var j = 0; j < columns.length; j++){
+      var render = render_array[j](hero_array[i][columns[j]], j, i, heroes);
+      var td = render(tr, function(x){
+        if (col_w[j]){
+          x.style.width = col_w[j]+"px"
+          x.style.maxWidth = col_w[j]+"px"
+        } else {
+          x.style.width = "30px"
+          x.style.maxWidth = "30px"
+        }
+      });
+    }
+
+  }
+  table.appendChild(tbl);
+  
+}
 var render_table = function(renderer){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()})
    var headtable = document.getElementById('tablehead'),
-      headers  = document.createElement('table');
+       headers  = document.createElement('table');
 
   var tr = headers.insertRow();
    for(var j = 0; j < index.length; j++){
@@ -237,4 +285,5 @@ window.onscroll = function(){
   })
 
 }
-document.onready = render_table(def_render);
+//document.onready = render_table(def_render);
+document.onready = newrender(hero_obj, def_views, index, nice_index);
