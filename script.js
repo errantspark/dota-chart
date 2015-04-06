@@ -30,6 +30,8 @@ heroes = heroes.map(function(x,i){
 index.splice(13,0,"dmg_vari")
 nice_index.splice(13,0,"Damage Variance")
 
+var indicies = index.map(function(x,i){return {attr: x, name: nice_index[i]}})
+
 var zip_to_object = function(name_array, obj_array, idx){
   var output = {}
   name_array.forEach(function(x,i){output[x] = obj_array[i]})
@@ -171,36 +173,41 @@ for (var i = 2; i < 8; i++){
 def_views[19] = render_heat;
 def_views[1] = render_main_attr;
 
+var views = {};
+index.forEach(function(x,i){views[x] = std_render})
+
 var def_render = make_renderer(heroes, def_views);
 
-var sorter = function(x){
+for (var i = 2; i < 8; i++){
+  views[indicies[i].attr] = render_heat_attr;
+}
+
+var sorter = function(col_name){
   var desc = true;
   var ret = function(){ 
-    var test = "lol";
-    heroes.sort(function(n,m){return m[x]-n[x]})
+    hero_obj.sort(function(n,m){return m[col_name]-n[col_name]})
     if (!desc){
-      heroes = heroes.reverse()
+      hero_obj = hero_obj.reverse()
     }
     desc = !desc;
-    var m = def_views.slice();
-    m[x] = m[x] || render_heat;
-    var render = make_renderer(heroes, m);
-    render_table(render);
+    //how even do you instantiate objects, 30k feet high can't look shit up
+    //m[col_name] = m[col_name] || render_heat;
+    newrender(hero_obj, views, indicies);
   }
   return ret;
 }
 
 var sorters = [];
-sorters = index.map(function(d, i){return sorter(i)})
-var newrender = function(hero_array, render_array, columns, col_names){
+sorters = indicies.map(function(d){return sorter(d.attr)})
+var newrender = function(hero_array, render_array, columns){
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x){x.remove()});
   var headtable = document.getElementById('tablehead'),
       headers  = document.createElement('table');
 
   var tr = headers.insertRow();
-  for(var j = 0; j < index.length; j++){
+  for(var j = 0; j < columns.length; j++){
     var td = tr.insertCell();
-    td.appendChild(document.createTextNode(col_names[j]));
+    td.appendChild(document.createTextNode(columns[j].name));
     td.addEventListener("click", sorters[j])
       if (col_w[j]){
         td.style.width = col_w[j]+"px"
@@ -218,7 +225,7 @@ var newrender = function(hero_array, render_array, columns, col_names){
   for(var i = 0; i < hero_array.length; i++){
     var tr = tbl.insertRow();
     for(var j = 0; j < columns.length; j++){
-      var render = render_array[j](hero_array[i][columns[j]], j, i, heroes);
+      var render = render_array[columns[j].attr](hero_array[i][columns[j].attr], j, i, heroes);
       var td = render(tr, function(x){
         if (col_w[j]){
           x.style.width = col_w[j]+"px"
@@ -286,4 +293,4 @@ window.onscroll = function(){
 
 }
 //document.onready = render_table(def_render);
-document.onready = newrender(hero_obj, def_views, index, nice_index);
+document.onready = newrender(hero_obj, views, indicies);
