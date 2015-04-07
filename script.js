@@ -59,7 +59,7 @@ var compute_min_max = function(key,array,store){
 
 Object.keys(indicies_obj).forEach(function(x,i){
   compute_min_max(x,hero_obj,indicies_obj);
-})
+});
 
 var find_in = function(term, column, array) {
   var lookup = array.map(function(x) {
@@ -140,23 +140,22 @@ var render_heat_attr_n = function(datum, column, hero, whole_table) {
   };
 };
 
-
 var render_main_attr = function(datum) {
   var color;
   switch (datum) {
     case 0:
-      color = "str";
+      color = "str_stat";
     break;
     case 1:
-      color = "agi";
+      color = "agi_stat";
     break;
     case 2:
-      color = "int";
+      color = "int_stat";
     break;
   }
   return function(tr, cb) {
     var td = tr.insertCell();
-    td.className = color;
+    td.classList.add(color);
     cb(td);
   };
 };
@@ -187,8 +186,8 @@ var sorter = function(col_name) {
 };
 
 Object.keys(indicies_obj).forEach(function(name){
-  indicies_obj[name].sorter = sorter(name)
-})
+  indicies_obj[name].sorter = sorter(name);
+});
 
 var render = function(hero_array, indicies_obj) {
   //this deletes every table
@@ -209,8 +208,7 @@ var render = function(hero_array, indicies_obj) {
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(columns[j].name));
     td.addEventListener("click", columns[j].sorter);
-    td.style.width = columns[j].width;
-    td.style.maxWidth = columns[j].width;
+    td.classList.add("column",columns[j].attr,"tableheaders");
   }
 
   headtable.appendChild(headers);
@@ -224,14 +222,11 @@ var render = function(hero_array, indicies_obj) {
       var render_this = indicies_obj[columns[j].attr].render(hero_array[i][columns[j].attr], columns[j], hero_array[i], hero_array);
       //render(23, "str", {name: Abb...}, {attr: "str", name: "Stre...}, [{hero} x 100])
       var td = render_this(tr, function(x) {
-        x.style.width = columns[j].width;
-        x.style.maxWidth = columns[j].width;
+        x.classList.add("column",columns[j].attr);
       });
     }
-
   }
   table.appendChild(tbl);
-
 };
 
 window.onscroll = function() {
@@ -242,7 +237,6 @@ window.onscroll = function() {
       header.style.marginTop = "-60px";
     }
   });
-
 };
 
 document.onready = render(hero_obj, indicies_obj);
