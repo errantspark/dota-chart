@@ -111,6 +111,11 @@ var render_heat_attr_n = function(datum, column, hero, whole_table) {
   var normalize_val = function(x) {
     return (x - min) / (max - min);
   };
+  //this whole shit is retarded, i should just pass the element to be styled
+  //into this function and then i wouldn't need this crazy callback bullshit
+  //also i probably don't want to be running the heat scale thing on render
+  //but rather include the color for each cell within the heroes table because
+  //the color per hero attribute stays the same
   return function(tr, cb) {
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(datum));
@@ -173,7 +178,6 @@ Object.keys(indicies_obj).forEach(function(name){
 
 var render = function(hero_array, indicies_obj) {
   //this deletes every table
-  console.profile("render")
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
     x.remove();
   });
@@ -210,7 +214,6 @@ var render = function(hero_array, indicies_obj) {
     }
   }
   table.appendChild(tbl);
-  console.profileEnd("render")
 };
 
 var scroll_pos = 0;
@@ -232,5 +235,11 @@ window.onscroll = function() {
     //}
   });
 };
+
+document.getElementById("filter").oninput = function(pr){
+  var search = pr.srcElement.value;
+  var fill = fuzzy.filter(search, hero_obj, {extract: function(el){return el.name}}).map(function(el){return el.original})
+  render(fill, indicies_obj)
+}
 
 document.onready = render(hero_obj, indicies_obj);
