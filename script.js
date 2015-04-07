@@ -27,8 +27,12 @@ var indicies_obj = (function(iind){
   return nope;
 })(indicies);
 
-//indicies is an array
-//[{attr:
+Object.keys(indicies_obj).forEach(function(x){
+  indicies_obj[x].width = "30px";
+})
+
+indicies_obj.name.width = "80px";
+indicies_obj.main_stat.width = "10px";
 
 var zip_to_object = function(name_array, obj_array, idx) {
   var output = {};
@@ -63,10 +67,6 @@ var find_in = function(term, column, array) {
   });
   return lookup.indexOf(term);
 };
-
-//column widths shouldn't be here
-var col_w = new Array(20);
-col_w[0] = [80];
 
 var viewhero = function(x) {
   heroes[x].forEach(function(x, i) {
@@ -181,15 +181,14 @@ var sorter = function(col_name) {
       hero_obj = hero_obj.reverse();
     }
     desc = !desc;
-    render(hero_obj, views, indicies);
+    render(hero_obj, indicies_obj);
   };
   return ret;
 };
 
-var sorters = [];
-sorters = indicies.map(function(d) {
-  return sorter(d.attr);
-});
+Object.keys(indicies_obj).forEach(function(name){
+  indicies_obj[name].sorter = sorter(name)
+})
 
 var render = function(hero_array, indicies_obj) {
   //this deletes every table
@@ -202,22 +201,16 @@ var render = function(hero_array, indicies_obj) {
   var tr = headers.insertRow();
 
   var columns = [];
-  Object.keys(indicies_obj).forEach(function(x,i){
-    columns[indicies_obj[x].index] = indicies_obj[x];
+  Object.keys(indicies_obj).forEach(function(name){
+    columns[indicies_obj[name].index] = indicies_obj[name];
   });
 
   for (var j = 0; j < columns.length; j++) {
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(columns[j].name));
-    indicies_obj[columns[j]]
-    td.addEventListener("click", sorters[j]);
-    if (col_w[j]) {
-      td.style.width = col_w[j] + "px";
-      td.style.maxWidth = col_w[j] + "px";
-    } else {
-      td.style.width = "30px";
-      td.style.maxWidth = "30px";
-    }
+    td.addEventListener("click", columns[j].sorter);
+    td.style.width = columns[j].width;
+    td.style.maxWidth = columns[j].width;
   }
 
   headtable.appendChild(headers);
@@ -231,13 +224,8 @@ var render = function(hero_array, indicies_obj) {
       var render_this = indicies_obj[columns[j].attr].render(hero_array[i][columns[j].attr], columns[j], hero_array[i], hero_array);
       //render(23, "str", {name: Abb...}, {attr: "str", name: "Stre...}, [{hero} x 100])
       var td = render_this(tr, function(x) {
-        if (col_w[j]) {
-          x.style.width = col_w[j] + "px";
-          x.style.maxWidth = col_w[j] + "px";
-        } else {
-          x.style.width = "30px";
-          x.style.maxWidth = "30px";
-        }
+        x.style.width = columns[j].width;
+        x.style.maxWidth = columns[j].width;
       });
     }
 
