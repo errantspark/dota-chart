@@ -193,6 +193,32 @@ var render_heat_attr = function(datum, index, heroindex, whole_table) {
   };
 };
 
+var render_heat_attr_n = function(datum, name, hero, column, whole_table) {
+  debugger;
+  //render(23, "str", {name: Abb...}, {attr: "str", name: "Stre...}, [{hero} x 100])
+  var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);
+  //var x_tract = whole_table.map(function(d) {
+  //  return d[index];
+  //});
+  //var max = .max.apply(null, x_tract);
+  //var min = Math.min.apply(null, x_tract);
+  var max = column.max
+  var min = column.min
+  var normalize_val = function(x) {
+    return (x - min) / (max - min);
+  };
+  return function(tr, cb) {
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(datum));
+    td.style.background = heat_scale(normalize_val(datum));
+    if (index === (hero.main_stat + 1) * 2 || index === (hero.main_stat + 1) * 2 + 1) {
+      td.style.fontWeight = "bold";
+    }
+    cb(td);
+  };
+};
+
+
 var render_main_attr = function(datum) {
   var color;
   switch (datum) {
@@ -212,35 +238,14 @@ var render_main_attr = function(datum) {
     cb(td);
   };
 };
-//defaults
-var def_views = [];
 
-for (var i = 0; i < 21; i++) {
-  def_views[i] = std_render;
-}
-for (var i = 2; i < 17; i++) {
-  def_views[i] = render_heat;
-}
-for (var i = 2; i < 8; i++) {
-  def_views[i] = render_heat_attr;
-}
-def_views[19] = render_heat;
-def_views[1] = render_main_attr;
-
-var views = {};
-index.forEach(function(x, i) {
-  views[x] = std_render;
+Object.keys(indicies_obj).forEach(function(x, i) {
+   indicies_obj[x].render = std_render;
 });
 
-//indicies_obj.forEach(function(x, i) {
-//   x.render = std_render;
-//});
-
-var def_render = make_renderer(heroes, def_views);
-
-for (var i = 2; i < 8; i++) {
-  views[indicies[i].attr] = render_heat_attr;
-}
+//for (var i = 2; i < 8; i++) {
+//  views[indicies[i].attr] = render_heat_attr;
+//}
 
 var sorter = function(col_name) {
   var desc = true;
@@ -252,7 +257,7 @@ var sorter = function(col_name) {
       hero_obj = hero_obj.reverse();
     }
     desc = !desc;
-    newrender(hero_obj, views, indicies);
+    render(hero_obj, views, indicies);
   };
   return ret;
 };
@@ -262,16 +267,21 @@ sorters = indicies.map(function(d) {
   return sorter(d.attr);
 });
 
-var newrender = function(hero_array, render_array, columns) {
+var render = function(hero_array, indicies_array) {
   //this deletes every table
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
     x.remove();
   });
   //this draws the top
-  var headtable = document.getElementById('tablehead'),
-  headers = document.createElement('table');
-
+  var headtable = document.getElementById('tablehead');
+  var headers = document.createElement('table');
   var tr = headers.insertRow();
+
+  var columns = []
+  Object.keys(indicies_array).forEach(function(x,i){
+    columns[indicies_array[x].index] = indicies_array[x];
+  });
+
   for (var j = 0; j < columns.length; j++) {
     var td = tr.insertCell();
     td.appendChild(document.createTextNode(columns[j].name));
@@ -287,14 +297,15 @@ var newrender = function(hero_array, render_array, columns) {
 
   headtable.appendChild(headers);
   //this section draws the table
-  var table = document.getElementById('table'),
-  tbl = document.createElement('table');
+  var table = document.getElementById('table');
+  var tbl = document.createElement('table');
 
   for (var i = 0; i < hero_array.length; i++) {
     var tr = tbl.insertRow();
     for (var j = 0; j < columns.length; j++) {
-      var render = render_array[columns[j].attr](hero_array[i][columns[j].attr], j, i, heroes);
-      var td = render(tr, function(x) {
+      var render_this = indicies_array[columns[j].attr].render(hero_array[i][columns[j].attr], columns[j], hero_array[i], indicies_array[columns[j]], hero_array);
+      //render(23, "str", {name: Abb...}, {attr: "str", name: "Stre...}, [{hero} x 100])
+      var td = render_this(tr, function(x) {
         if (col_w[j]) {
           x.style.width = col_w[j] + "px";
           x.style.maxWidth = col_w[j] + "px";
@@ -321,5 +332,4 @@ window.onscroll = function() {
 
 };
 
-//document.onready = render_table(def_render);
-document.onready = newrender(hero_obj, views, indicies);
+document.onready = render(hero_obj, indicies_obj);
