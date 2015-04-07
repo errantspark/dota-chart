@@ -103,27 +103,9 @@ var std_render = function(datum) {
   };
 };
 
-var render_heat = function(datum, index, heroindex, whole_table) {
-  var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);
-  var x_tract = whole_table.map(function(d) {
-    return d[index];
-  });
-  var max = Math.max.apply(null, x_tract);
-  var min = Math.min.apply(null, x_tract);
-  var normalize_val = function(x) {
-    return (x - min) / (max - min);
-  };
-  return function(tr, cb) {
-    var td = tr.insertCell();
-    td.appendChild(document.createTextNode(datum));
-    td.style.background = heat_scale(normalize_val(datum));
-    cb(td);
-  };
-};
-
+var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);
 var render_heat_attr_n = function(datum, column, hero, whole_table) {
   //render(23, "str", {name: Abb...}, {attr: "str", name: "Stre...}, [{hero} x 100])
-  var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);
   var max = column.max;
   var min = column.min;
   var normalize_val = function(x) {
@@ -191,6 +173,7 @@ Object.keys(indicies_obj).forEach(function(name){
 
 var render = function(hero_array, indicies_obj) {
   //this deletes every table
+  console.profile("render")
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
     x.remove();
   });
@@ -220,22 +203,33 @@ var render = function(hero_array, indicies_obj) {
     var tr = tbl.insertRow();
     for (var j = 0; j < columns.length; j++) {
       var render_this = indicies_obj[columns[j].attr].render(hero_array[i][columns[j].attr], columns[j], hero_array[i], hero_array);
-      //render(23, "str", {name: Abb...}, {attr: "str", name: "Stre...}, [{hero} x 100])
+      //render(23, "str", {attr: "str", name: "Stre...}, {name: Abb...}, [{hero} x 100])
       var td = render_this(tr, function(x) {
         x.classList.add("column",columns[j].attr);
       });
     }
   }
   table.appendChild(tbl);
+  console.profileEnd("render")
 };
 
+var scroll_pos = 0;
 window.onscroll = function() {
+  var header = document.getElementById("header")
+  var offset = window.scrollY-scroll_pos;
+  scroll_pos = window.scrollY;
   window.requestAnimationFrame(function() {
-    if (window.scrollY <= 60) {
-      header.style.marginTop = "-" + window.scrollY + "px";
-    } else if (window.scrollY > 60 && header.style.marginTop !== "-60px") {
-      header.style.marginTop = "-60px";
-    }
+    var margintop = window.getComputedStyle(header).marginTop;
+    var margint = parseInt(margintop.slice(0, margintop.lastIndexOf("p")));
+    if (offset > 0) {
+      margint-offset < -60 ? margint = -60 : margint = (margint-offset)
+      header.style.marginTop = margint+"px" 
+    } else if (offset < 0) {
+      margint-offset > 0 ? margint = 0 : margint = (margint-offset)
+      header.style.marginTop = margint+"px" 
+    }//else if (window.scrollY > 60 && header.style.marginTop !== "-60px" && offset > 0) {
+     // header.style.marginTop = "-60px";
+    //}
   });
 };
 
