@@ -37,9 +37,17 @@ var indicies = index.map(function(x, i) {
   return {
     attr: x,
     name: nice_index[i],
-    id: i
+    index: i
   };
 });
+
+var indicies_obj = (function(iind){
+  var nope = {};
+  iind.forEach(function(x,i){
+    nope[x.attr] = x ;
+  });
+  return nope;
+})(indicies);
 
 //indicies is an array
 //[{attr:
@@ -58,6 +66,17 @@ var zip_to_object = function(name_array, obj_array, idx) {
 hero_obj = heroes.map(function(x, i) {
   return zip_to_object(index, x, i);
 });
+
+var compute_min_max = function(key,array,store){
+  //fn("str",hero_obj,indicies_obj)
+  var index = [];
+  array.forEach(function(x,i){
+    index[x.index] = x[key];
+  });
+  store[key].max = Math.max.apply(null, index);
+  store[key].min = Math.min.apply(null, index);
+};
+compute_min_max("str",hero_obj,indicies_obj);
 
 var find_in = function(term, column, array) {
   var lookup = array.map(function(x) {
@@ -213,6 +232,10 @@ index.forEach(function(x, i) {
   views[x] = std_render;
 });
 
+//indicies_obj.forEach(function(x, i) {
+//   x.render = std_render;
+//});
+
 var def_render = make_renderer(heroes, def_views);
 
 for (var i = 2; i < 8; i++) {
@@ -229,8 +252,6 @@ var sorter = function(col_name) {
       hero_obj = hero_obj.reverse();
     }
     desc = !desc;
-    //how even do you instantiate objects, 30k feet high can't look shit up
-    //m[col_name] = m[col_name] || render_heat;
     newrender(hero_obj, views, indicies);
   };
   return ret;
@@ -240,10 +261,13 @@ var sorters = [];
 sorters = indicies.map(function(d) {
   return sorter(d.attr);
 });
+
 var newrender = function(hero_array, render_array, columns) {
+  //this deletes every table
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
     x.remove();
   });
+  //this draws the top
   var headtable = document.getElementById('tablehead'),
   headers = document.createElement('table');
 
@@ -262,6 +286,7 @@ var newrender = function(hero_array, render_array, columns) {
   }
 
   headtable.appendChild(headers);
+  //this section draws the table
   var table = document.getElementById('table'),
   tbl = document.createElement('table');
 
@@ -284,48 +309,6 @@ var newrender = function(hero_array, render_array, columns) {
   table.appendChild(tbl);
 
 };
-var render_table = function(renderer) {
-  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
-    x.remove();
-  });
-  var headtable = document.getElementById('tablehead'),
-  headers = document.createElement('table');
-
-  var tr = headers.insertRow();
-  for (var j = 0; j < index.length; j++) {
-    var td = tr.insertCell();
-    td.appendChild(document.createTextNode(index[j]));
-    td.addEventListener("click", sorters[j]);
-    if (col_w[j]) {
-      td.style.width = col_w[j] + "px";
-      td.style.maxWidth = col_w[j] + "px";
-    } else {
-      td.style.width = "30px";
-      td.style.maxWidth = "30px";
-    }
-  }
-
-  headtable.appendChild(headers);
-  var table = document.getElementById('table'),
-  tbl = document.createElement('table');
-
-  for (var i = 0; i < renderer.length; i++) {
-    var tr: = tbl.insertRow();
-    for (var j = 0; j < renderer[i].length; j++) {
-      var td = renderer[i][j](tr, function(x) {
-        if (col_w[j]) {
-          x.style.width = col_w[j] + "px";
-          x.style.maxWidth = col_w[j] + "px";
-        } else {
-          x.style.width = "30px";
-          x.style.maxWidth = "30px";
-        }
-      });
-    }
-
-  }
-  table.appendChild(tbl);
-};
 
 window.onscroll = function() {
   window.requestAnimationFrame(function() {
@@ -337,5 +320,6 @@ window.onscroll = function() {
   });
 
 };
+
 //document.onready = render_table(def_render);
 document.onready = newrender(hero_obj, views, indicies);
