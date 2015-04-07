@@ -92,250 +92,250 @@ sorts.base_stat_growth = function(x, y) {
 sorts.combined_stat_growth = function(x, y) {
   return (y[3] + y[5] + y[7]) - (x[3] + x[5] + x[7]);
 };
-;
-sorts.movespeed = function(x, y) {;
+
+sorts.movespeed = function(x, y) {
   return y[8] - x[8];
 };
-;
-//DESIGN NOTES: I want to keep the hero data as raw as possible and have a few;
-//functions the serve as "views" to transpose the data into a reasonable format;
-//and then render that, the "reasonable format" should be an object that;
-//has a .render function that gets passed an element and styles it;
-;
-;
-//this function is kind of a matrix thing where it takes a heroes and a ;
-//a mapping array where the array is a set of [20] functions that determine the ;
-//rendering by each taking an element (a td) and styling it/adding info;
-//this is passed an already sorted array?;
-//yes it makes sense because you might want to change the look of the table;
-//based on a sort and thus it makes sense to sort -> pass into combiner function;
-//that takes the table and genertes rendering rules;
-//;
-//yes this is a good idea because if i add a column to i can simply add a styling;
-//function and then the renderer just runs a the corresponding function agnostically;
-var make_renderer = function(hero_array, view_gen_array) {;
-  return hero_array.map(function(hero, i) {;
-    return hero.map(function(value, j) {;
-      if (view_gen_array[j] === undefined) {;
+
+//DESIGN NOTES: I want to keep the hero data as raw as possible and have a few
+//functions the serve as "views" to transpose the data into a reasonable format
+//and then render that, the "reasonable format" should be an object that
+//has a .render function that gets passed an element and styles it
+
+
+//this function is kind of a matrix thing where it takes a heroes and a 
+//a mapping array where the array is a set of [20] functions that determine the 
+//rendering by each taking an element (a td) and styling it/adding info
+//this is passed an already sorted array?
+//yes it makes sense because you might want to change the look of the table
+//based on a sort and thus it makes sense to sort -> pass into combiner function
+//that takes the table and genertes rendering rules
+//
+//yes this is a good idea because if i add a column to i can simply add a styling
+//function and then the renderer just runs a the corresponding function agnostically
+var make_renderer = function(hero_array, view_gen_array) {
+  return hero_array.map(function(hero, i) {
+    return hero.map(function(value, j) {
+      if (view_gen_array[j] === undefined) {
         return std_render(value, j);
-      } else if (view_gen_array[j] === null) {;
+      } else if (view_gen_array[j] === null) {
         return function() {};
-      } else {;
+      } else {
         return view_gen_array[j](value, j, i, hero_array);
-      };
+      }
     });
   });
 };
-;
-var std_render = function(datum, index, heroindex, whole_table) {;
-  return function(tr, cb) {;
-    var td = tr.insertCell();;
-    td.appendChild(document.createTextNode(datum));;
-    cb(td);;
+
+var std_render = function(datum, index, heroindex, whole_table) {
+  return function(tr, cb) {
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(datum));
+    cb(td);
   };
 };
-;
-var render_heat = function(datum, index, heroindex, whole_table) {;
-  var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);;
-  var x_tract = whole_table.map(function(d) {;
+
+var render_heat = function(datum, index, heroindex, whole_table) {
+  var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);
+  var x_tract = whole_table.map(function(d) {
     return d[index];
-  });;
-  var max = Math.max.apply(null, x_tract);;
-  var min = Math.min.apply(null, x_tract);;
-  var normalize_val = function(x) {;
+  });
+  var max = Math.max.apply(null, x_tract);
+  var min = Math.min.apply(null, x_tract);
+  var normalize_val = function(x) {
     return (x - min) / (max - min);
   };
-  return function(tr, cb) {;
-    var td = tr.insertCell();;
+  return function(tr, cb) {
+    var td = tr.insertCell();
     td.appendChild(document.createTextNode(datum));
     td.style.background = heat_scale(normalize_val(datum));
-    cb(td);;
+    cb(td);
   };
 };
-;
-var render_heat_attr = function(datum, index, heroindex, whole_table) {;
-  var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);;
-  var x_tract = whole_table.map(function(d) {;
+
+var render_heat_attr = function(datum, index, heroindex, whole_table) {
+  var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);
+  var x_tract = whole_table.map(function(d) {
     return d[index];
-  });;
-  var max = Math.max.apply(null, x_tract);;
-  var min = Math.min.apply(null, x_tract);;
-  var normalize_val = function(x) {;
+  });
+  var max = Math.max.apply(null, x_tract);
+  var min = Math.min.apply(null, x_tract);
+  var normalize_val = function(x) {
     return (x - min) / (max - min);
   };
-  return function(tr, cb) {;
-    var td = tr.insertCell();;
+  return function(tr, cb) {
+    var td = tr.insertCell();
     td.appendChild(document.createTextNode(datum));
     td.style.background = heat_scale(normalize_val(datum));
-    if (index === (whole_table[heroindex][1] + 1) * 2 || index === (whole_table[heroindex][1] + 1) * 2 + 1) {;
-      td.style.fontWeight = "bold";;
-    };
-    cb(td);;
+    if (index === (whole_table[heroindex][1] + 1) * 2 || index === (whole_table[heroindex][1] + 1) * 2 + 1) {
+      td.style.fontWeight = "bold";
+    }
+    cb(td);
   };
 };
-;
-var render_main_attr = function(datum) {;
-  var color;;
-  switch (datum) {;
-    case 0:;
-      color = "#ED201E";;
-    break;;
-    case 1:;
-      color = "#397737";;
-    break;;
-    case 2:;
-      color = "#1788B0";;
-    break;;
+
+var render_main_attr = function(datum) {
+  var color;
+  switch (datum) {
+    case 0:
+      color = "#ED201E";
+    break;
+    case 1:
+      color = "#397737";
+    break;
+    case 2:
+      color = "#1788B0";
+    break;
+  }
+  return function(tr, cb) {
+    var td = tr.insertCell();
+    td.style.background = color;
+    cb(td);
   };
-  return function(tr, cb) {;
-    var td = tr.insertCell();;
-    td.style.background = color;;
-    cb(td);;
-  };
-  };
-  //defaults;
-var def_views = [];;
-;
-for (var i = 0; i < 21; i++) {;
-  def_views[i] = std_render;;
 };
-for (var i = 2; i < 17; i++) {;
-  def_views[i] = render_heat;;
-};
-for (var i = 2; i < 8; i++) {;
-  def_views[i] = render_heat_attr;;
-};
-def_views[19] = render_heat;;
-def_views[1] = render_main_attr;;
-;
-var views = {};;
-index.forEach(function(x, i) {;
+//defaults
+var def_views = [];
+
+for (var i = 0; i < 21; i++) {
+  def_views[i] = std_render;
+}
+for (var i = 2; i < 17; i++) {
+  def_views[i] = render_heat;
+}
+for (var i = 2; i < 8; i++) {
+  def_views[i] = render_heat_attr;
+}
+def_views[19] = render_heat;
+def_views[1] = render_main_attr;
+
+var views = {};
+index.forEach(function(x, i) {
   views[x] = std_render;
 });
-;
-var def_render = make_renderer(heroes, def_views);;
-;
-for (var i = 2; i < 8; i++) {;
-  views[indicies[i].attr] = render_heat_attr;;
-};
-;
-var sorter = function(col_name) {;
-  var desc = true;;
-  var ret = function() {;
-    hero_obj.sort(function(n, m) {;
+
+var def_render = make_renderer(heroes, def_views);
+
+for (var i = 2; i < 8; i++) {
+  views[indicies[i].attr] = render_heat_attr;
+}
+
+var sorter = function(col_name) {
+  var desc = true;
+  var ret = function() {
+    hero_obj.sort(function(n, m) {
       return m[col_name] - n[col_name];
     });
-    if (!desc) {;
+    if (!desc) {
       hero_obj = hero_obj.reverse();
-    };
-    desc = !desc;;
-    //how even do you instantiate objects, 30k feet high can't look shit up;
-    //m[col_name] = m[col_name] || render_heat;;
-    newrender(hero_obj, views, indicies);;
+    }
+    desc = !desc;
+    //how even do you instantiate objects, 30k feet high can't look shit up
+    //m[col_name] = m[col_name] || render_heat;
+    newrender(hero_obj, views, indicies);
   };
-  return ret;;
+  return ret;
 };
-;
-var sorters = [];;
-sorters = indicies.map(function(d) {;
+
+var sorters = [];
+sorters = indicies.map(function(d) {
   return sorter(d.attr);
 });
-var newrender = function(hero_array, render_array, columns) {;
-  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {;
-    x.remove();
-  });;
-  var headtable = document.getElementById('tablehead'),;
-    headers = document.createElement('table');;
-;
-  var tr = headers.insertRow();;
-  for (var j = 0; j < columns.length; j++) {;
-    var td = tr.insertCell();;
-    td.appendChild(document.createTextNode(columns[j].name));;
-    td.addEventListener("click", sorters[j]);
-    if (col_w[j]) {;
-      td.style.width = col_w[j] + "px";
-      td.style.maxWidth = col_w[j] + "px";
-    } else {;
-      td.style.width = "30px";
-      td.style.maxWidth = "30px";
-    };
-  };
-;
-  headtable.appendChild(headers);;
-  var table = document.getElementById('table'),;
-    tbl = document.createElement('table');;
-;
-  for (var i = 0; i < hero_array.length; i++) {;
-    var tr = tbl.insertRow();;
-    for (var j = 0; j < columns.length; j++) {;
-      var render = render_array[columns[j].attr](hero_array[i][columns[j].attr], j, i, heroes);;
-      var td = render(tr, function(x) {;
-        if (col_w[j]) {;
-          x.style.width = col_w[j] + "px";
-          x.style.maxWidth = col_w[j] + "px";
-        } else {;
-          x.style.width = "30px";
-          x.style.maxWidth = "30px";
-        };
-      });;
-    };
-;
-  };
-  table.appendChild(tbl);;
-;
-};
-var render_table = function(renderer) {;
-  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {;
+var newrender = function(hero_array, render_array, columns) {
+  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
     x.remove();
   });
-  var headtable = document.getElementById('tablehead'),;
-    headers = document.createElement('table');;
-;
-  var tr = headers.insertRow();;
-  for (var j = 0; j < index.length; j++) {;
-    var td = tr.insertCell();;
-    td.appendChild(document.createTextNode(index[j]));;
+  var headtable = document.getElementById('tablehead'),
+  headers = document.createElement('table');
+
+  var tr = headers.insertRow();
+  for (var j = 0; j < columns.length; j++) {
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(columns[j].name));
     td.addEventListener("click", sorters[j]);
-    if (col_w[j]) {;
+    if (col_w[j]) {
       td.style.width = col_w[j] + "px";
       td.style.maxWidth = col_w[j] + "px";
-    } else {;
+    } else {
       td.style.width = "30px";
       td.style.maxWidth = "30px";
-    };
-  };
-;
-  headtable.appendChild(headers);;
-  var table = document.getElementById('table'),;
-    tbl = document.createElement('table');;
-;
-  for (var i = 0; i < renderer.length; i++) {;
-    var tr = tbl.insertRow();;
-    for (var j = 0; j < renderer[i].length; j++) {;
-      var td = renderer[i][j](tr, function(x) {;
-        if (col_w[j]) {;
+    }
+  }
+
+  headtable.appendChild(headers);
+  var table = document.getElementById('table'),
+  tbl = document.createElement('table');
+
+  for (var i = 0; i < hero_array.length; i++) {
+    var tr = tbl.insertRow();
+    for (var j = 0; j < columns.length; j++) {
+      var render = render_array[columns[j].attr](hero_array[i][columns[j].attr], j, i, heroes);
+      var td = render(tr, function(x) {
+        if (col_w[j]) {
           x.style.width = col_w[j] + "px";
           x.style.maxWidth = col_w[j] + "px";
-        } else {;
+        } else {
           x.style.width = "30px";
           x.style.maxWidth = "30px";
-        };
-      });;
-    };
-;
-  };
-  table.appendChild(tbl);;
+        }
+      });
+    }
+
+  }
+  table.appendChild(tbl);
+
 };
-;
-window.onscroll = function() {;
-    window.requestAnimationFrame(function() {;
-      if (window.scrollY <= 60) {;
-        header.style.marginTop = "-" + window.scrollY + "px";
-      } else if (window.scrollY > 60 && header.style.marginTop !== "-60px") {;
-        header.style.marginTop = "-60px";
-      };
-    });
-;
-  };
-  //document.onready = render_table(def_render);;
-document.onready = newrender(hero_obj, views, indicies);;
+var render_table = function(renderer) {
+  Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
+    x.remove();
+  });
+  var headtable = document.getElementById('tablehead'),
+  headers = document.createElement('table');
+
+  var tr = headers.insertRow();
+  for (var j = 0; j < index.length; j++) {
+    var td = tr.insertCell();
+    td.appendChild(document.createTextNode(index[j]));
+    td.addEventListener("click", sorters[j]);
+    if (col_w[j]) {
+      td.style.width = col_w[j] + "px";
+      td.style.maxWidth = col_w[j] + "px";
+    } else {
+      td.style.width = "30px";
+      td.style.maxWidth = "30px";
+    }
+  }
+
+  headtable.appendChild(headers);
+  var table = document.getElementById('table'),
+  tbl = document.createElement('table');
+
+  for (var i = 0; i < renderer.length; i++) {
+    var tr: = tbl.insertRow();
+    for (var j = 0; j < renderer[i].length; j++) {
+      var td = renderer[i][j](tr, function(x) {
+        if (col_w[j]) {
+          x.style.width = col_w[j] + "px";
+          x.style.maxWidth = col_w[j] + "px";
+        } else {
+          x.style.width = "30px";
+          x.style.maxWidth = "30px";
+        }
+      });
+    }
+
+  }
+  table.appendChild(tbl);
+};
+
+window.onscroll = function() {
+  window.requestAnimationFrame(function() {
+    if (window.scrollY <= 60) {
+      header.style.marginTop = "-" + window.scrollY + "px";
+    } else if (window.scrollY > 60 && header.style.marginTop !== "-60px") {
+      header.style.marginTop = "-60px";
+    }
+  });
+
+};
+//document.onready = render_table(def_render);
+document.onready = newrender(hero_obj, views, indicies);
