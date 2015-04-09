@@ -159,10 +159,15 @@ var colorize_by_heat = function(hero, column, heat_scale){
 }
 
 
-var style_column = function(col_name, styleFn, heroTable, headers){
-  var header = headers[col_name]
+var styleColumn = function(colName, styleFn, heroTable, headers){
+  var header = headers[colName]
   heroTable.forEach(function(dat){
-    dat[col_name].style = colorizer(dat, header)
+    var style = styleFn(dat, header)
+    Object.keys(style).forEach(function(key){
+      dat[colName].style = dat[colName].style || {}
+      dat[colName].style[key] = style[key];
+    })
+    //dat[colName].style = colorizer(dat, header)
   })
 }
 
@@ -170,7 +175,7 @@ var heat_colorizer = (function(heat_s){
   return function(hero, column){return colorize_by_heat(hero, column, heat_s)}
 })(heat_scale)
 
-style_column("str", heat_colorizer, hero_obj, indicies_obj);
+styleColumn("str", heat_colorizer, hero_obj, indicies_obj);
 
 var render_main_attr = function(datum) {
   var color;
