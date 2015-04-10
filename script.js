@@ -222,13 +222,9 @@ indicies_obj.main_stat.styleFns.push(renderMainStat);
 styleByHeaders(hero_obj, indicies_obj);
 
 var changeLevel = function(heroEl, level){
-  //var hero = {};
- // Object.keys(heroEl).forEach(function(key){
- //   hero[key] = heroEl[key];
- // });
   var hero = clone(heroEl)
   "str,agi,int".split(",").forEach(function(key){
-    hero[key].val = Math.round(hero[key].val+hero[key+"_gain"].val*level);
+    hero[key].val = Math.round(hero[key].val+hero[key+"_gain"].val*(level-1));
   });
   return hero;
 };
@@ -258,10 +254,13 @@ var sorter = function(col_name, hero_obj, indicies_obj) {
 
 var stupidGlobalSortDirectionHack = true;
 
-var render = function(heroTable, indicies_obj) {
+var level = 1;
+var render = function(heroTsable, indicies_obj) {
+  var heroTable = clone(heroTsable)
   Object.keys(indicies_obj).forEach(function(name) {
     indicies_obj[name].sorter = sorter(name, heroTable, indicies_obj);
   });
+  heroTable = mutateByLevel(heroTable, level)
   //this deletes every table
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
     x.remove();
@@ -317,17 +316,19 @@ window.onscroll = function() {
     //}
   });
 };
-
 document.getElementById("filter").oninput = function(pr) {
-  var search = pr.srcElement.value;
-  var fill = fuzzy.filter(search, hero_obj, {
-    extract: function(el) {
-      return el.name.val;
-    }
-  }).map(function(el) {
-    return el.original;
-  });
+  var search = pr.srcElement.value.split(",");
+  var fill = search.map(function(elem){
+    return fuzzy.filter(elem, hero_obj, {
+      extract: function(el) {
+       return el.name.val;
+      }
+    }).map(function(el) {
+      return el.original;
+    })
+  })
+  fill = fill.reduce(function(x,y){return x.concat(y)})
   render(fill, indicies_obj);
-};
+  };
 
 document.onready = render(hero_obj, indicies_obj);
