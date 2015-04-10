@@ -2,11 +2,20 @@ var nice_index = ["Name", "", "Str", "Str+", "Agi", "Agi+", "Int", "Int+", "Move
 
 var index = ["name", "main_stat", "str", "str_gain", "agi", "agi_gain", "int", "int_gain", "movespeed", "base_armor", "base_attack_time", "dmg_min", "dmg_max", "attack_range", "missile_speed", "attack_point", "day_sight", "night_sight", "turn_rate", "collision_size"];
 
+var heatStyle = ["str", "str_gain", "agi", "agi_gain", "int", "int_gain", "movespeed", "base_armor", "base_attack_time", "dmg_min", "dmg_max", "attack_range", "missile_speed", "attack_point", "turn_rate", "stat_gain_avg", "dmg_vari"];
 //add a damage variance column to the hero table
 heroes = heroes.map(function(x, i) {
   x.splice(13, 0, (x[12] - x[11]));
   return x;
 });
+var clone = function(obj) {
+    if (null == obj || "object" != typeof obj) return obj;
+    var copy = obj.constructor();
+    for (var attr in obj) {
+            if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+        }
+    return copy;
+}
 
 index.splice(13, 0, "dmg_vari");
 nice_index.splice(13, 0, "Damage Variance");
@@ -25,7 +34,8 @@ var make_indicies_array = function(index) {
     return {
       attr: x,
       name: nice_index[i],
-      index: i
+      index: i,
+      styleFns: []
     };
   });
 
@@ -38,14 +48,14 @@ var make_indicies_array = function(index) {
   })(indicies);
 
   return indicies_obj;
-}
+};
 
-indicies_obj = make_indicies_array(index)
+indicies_obj = make_indicies_array(index);
 
 
 Object.keys(indicies_obj).forEach(function(x) {
   indicies_obj[x].width = "30px";
-})
+});
 
 indicies_obj.name.width = "80px";
 indicies_obj.main_stat.width = "10px";
@@ -63,36 +73,29 @@ var make_hero_obj = function(heroes, index) {
   return heroes.map(function(x, i) {
     return zip_to_object(index, x, i);
   });
-}
+};
 
-var hero_obj = make_hero_obj(heroes, indicies_obj)
+var hero_obj = make_hero_obj(heroes, indicies_obj);
 
-var compute_min_max = function(key, array, store) {
+var compute_min_max = function(key, array, headers) {
   //fn("str",hero_obj,indicies_obj)
   var index = [];
   array.forEach(function(x, i) {
     index[x.index] = x[key].val;
   });
-  store[key].max = Math.max.apply(null, index);
-  store[key].min = Math.min.apply(null, index);
+  headers[key].max = Math.max.apply(null, index);
+  headers[key].min = Math.min.apply(null, index);
 };
 
-Object.keys(indicies_obj).forEach(function(x, i) {
-  compute_min_max(x, hero_obj, indicies_obj);
-});
-
-var find_in = function(term, column, array) {
-  var lookup = array.map(function(x) {
-    return x[column];
+var updateMinMax = function(heroTable, headers){
+  var newHeaders = clone(headers);
+  Object.keys(newHeaders).map(function(x, i) {
+    compute_min_max(x, heroTable, newHeaders);
   });
-  return lookup.indexOf(term);
-};
+  return newHeaders;
+}
 
-var viewhero = function(x) {
-  heroes[x].forEach(function(x, i) {
-    console.log(index[i] + ": " + x);
-  });
-};
+indicies_obj = updateMinMax(hero_obj, indicies_obj);
 
 var sorts = {};
 sorts.damage_variability = function(x, y) {
@@ -115,71 +118,59 @@ sorts.movespeed = function(x, y) {
   return y[8] - x[8];
 };
 
-var std_render = function(datum) {
-  return function(tr, cb) {
-    var td = tr.insertCell();
-    td.appendChild(document.createTextNode(datum));
-    cb(td);
-  };
-};
+var heatScale = chroma.scale(['lightblue', 'khaki', 'salmon']);
 
-var heat_scale = chroma.scale(['lightblue', 'khaki', 'salmon']);
-var render_heat_attr_n = function(datum, column, hero, whole_table) {
-  //render(23, "str", {name: Abb...}, {attr: "str", name: "Stre...}, [{hero} x 100])
+var colorByHeat = function(hero, column, heatScale){
   var max = column.max;
   var min = column.min;
-  var normalize_val = function(x) {
+  var normalizeVal = function(x) {
     return (x - min) / (max - min);
   };
-  //this whole shit is retarded, i should just pass the element to be styled
-  //into this function and then i wouldn't need this crazy callback bullshit
-  //also i probably don't want to be running the heat scale thing on render
-  //but rather include the color for each cell within the heroes table because
-  //the color per hero attribute stays the same
-  return function(tr, cb) {
-    var td = tr.insertCell();
-    td.appendChild(document.createTextNode(datum));
-    td.style.background = heat_scale(normalize_val(datum));
-    if (column.index === (hero.main_stat + 1) * 2 || column.index === (hero.main_stat + 1) * 2 + 1) {
-      td.style.fontWeight = "bold";
-    }
-    cb(td);
-  };
+  var style = {};
+  var classes = [];
+  style.background = heatScale(normalizeVal(hero[column.attr].val)).hex(); 
+  return {style: style, classes: classes};
 };
+//continuation cause the styling function only takes 2 argumens
+var heatColorizer = (function(heatS){
+  return function(hero, column){return colorByHeat(hero, column, heatS);};
+})(heatScale);
 
-var colorize_by_heat = function(hero, column, heat_scale){
-  var max = column.max;
-  var min = column.min;
-  var normalize_val = function(x) {
-    return (x - min) / (max - min);
-  };
-  var style = {}
-  style.background = heat_scale(normalize_val(hero[column.attr].val)).hex(); 
-  return style;
-}
+var boldIfMain = function(hero, column){
+  if (column.index === (hero.main_stat.val + 1) * 2 || column.index === (hero.main_stat.val + 1) * 2 + 1) {
+    var style = {};
+    style.fontWeight = "bold";
+  }
+
+  return {style: style};
+};
 
 
 var styleColumn = function(colName, styleFn, heroTable, headers){
-  var header = headers[colName]
+  var header = headers[colName];
   heroTable.forEach(function(dat){
-    var style = styleFn(dat, header)
+    var output = styleFn(dat,header);
+    var style = output.style || {};
+    var classes = output.classes || [];
     Object.keys(style).forEach(function(key){
-      dat[colName].style = dat[colName].style || {}
+      dat[colName].style = dat[colName].style || {};
       dat[colName].style[key] = style[key];
-    })
-    //dat[colName].style = colorizer(dat, header)
-  })
-}
+    });
+    dat[colName].classes = classes; 
+  });
+};
 
-var heat_colorizer = (function(heat_s){
-  return function(hero, column){return colorize_by_heat(hero, column, heat_s)}
-})(heat_scale)
+var styleColumns = function(colNameArray, styleFn, heroTable, headers){
+  colNameArray.forEach(function(dat){
+    styleColumn(dat, styleFn, heroTable, headers);
+  });
+};
 
-styleColumn("str", heat_colorizer, hero_obj, indicies_obj);
 
-var render_main_attr = function(datum) {
+
+var renderMainStat = function(hero) {
   var color;
-  switch (datum) {
+  switch (hero.main_stat.val) {
     case 0:
       color = "str_stat";
     break;
@@ -190,53 +181,87 @@ var render_main_attr = function(datum) {
       color = "int_stat";
     break;
   }
-  return function(tr, cb) {
-    var td = tr.insertCell();
-    td.classList.add(color);
-    cb(td);
-  };
+  var classes = [color];
+  return {classes: classes};
 };
 
-Object.keys(indicies_obj).forEach(function(x, i) {
-  indicies_obj[x].render = render_heat_attr_n;
-});
-
-"name,night_sight,day_sight,collision_size".split(",").forEach(function(x, i) {
-  indicies_obj[x].render = std_render;
-});
-
-indicies_obj.main_stat.render = render_main_attr;
-
-var basic_render = function(tr,value){
+var basicRender = function(tr,value){
   var td = tr.insertCell();
   td.appendChild(document.createTextNode(value.val));
   if (value.style) { Object.keys(value.style).forEach(function(key){
-    td.style[key] = value.style[key]
-  })
+    td.style[key] = value.style[key];
+  });
+  }
+  if (value.classes) {
+    DOMTokenList.prototype.add.apply(td.classList,value.classes);
   }
   return td;
-}
+};
 
-var sorter = function(col_name) {
-  var desc = true;
+var styleByHeaders = function(heroTable, headers){
+  var colkeys = Object.keys(headers);
+  colkeys.forEach(function(key){
+    if (headers[key].styleFns.length > 0){
+      headers[key].styleFns.forEach(function(dat){
+        styleColumn(key, dat, heroTable, headers);
+      });
+    }
+  });
+};
+
+heatStyle.forEach(function(x, i) {
+  indicies_obj[x].styleFns.push(heatColorizer);
+});
+
+"agi,agi_gain,str,str_gain,int,int_gain".split(",").forEach(function(x, i) {
+  indicies_obj[x].styleFns.push(boldIfMain);
+});
+
+indicies_obj.main_stat.styleFns.push(renderMainStat);
+
+styleByHeaders(hero_obj, indicies_obj);
+
+var changeLevel = function(heroEl, level){
+  //var hero = {};
+ // Object.keys(heroEl).forEach(function(key){
+ //   hero[key] = heroEl[key];
+ // });
+  var hero = clone(heroEl)
+  "str,agi,int".split(",").forEach(function(key){
+    hero[key].val = Math.round(hero[key].val+hero[key+"_gain"].val*level);
+  });
+  return hero;
+};
+var mutateByLevel = function(heroInTable, level){
+  var heroTable = clone(heroInTable)
+  heroTable = heroTable.map(function(hero){
+    return changeLevel(hero, level)
+  });
+  var updatedHeaders = updateMinMax(heroTable, indicies_obj)
+  styleByHeaders(heroTable, updatedHeaders);
+  return heroTable;
+};
+
+var sorter = function(col_name, hero_obj, indicies_obj) {
   var ret = function() {
     hero_obj.sort(function(n, m) {
-      return m[col_name] - n[col_name];
+      return m[col_name].val - n[col_name].val;
     });
-    if (!desc) {
+    if (!stupidGlobalSortDirectionHack) {
       hero_obj = hero_obj.reverse();
     }
-    desc = !desc;
+    stupidGlobalSortDirectionHack = !stupidGlobalSortDirectionHack;
     render(hero_obj, indicies_obj);
   };
   return ret;
 };
 
-Object.keys(indicies_obj).forEach(function(name) {
-  indicies_obj[name].sorter = sorter(name);
-});
+var stupidGlobalSortDirectionHack = true;
 
-var render = function(hero_array, indicies_obj) {
+var render = function(heroTable, indicies_obj) {
+  Object.keys(indicies_obj).forEach(function(name) {
+    indicies_obj[name].sorter = sorter(name, heroTable, indicies_obj);
+  });
   //this deletes every table
   Array.prototype.slice.call(document.getElementsByTagName("table")).forEach(function(x) {
     x.remove();
@@ -263,15 +288,11 @@ var render = function(hero_array, indicies_obj) {
   var table = document.getElementById('table');
   var tbl = document.createElement('table');
 
-  for (var i = 0; i < hero_array.length; i++) {
+  for (var i = 0; i < heroTable.length; i++) {
     var tr = tbl.insertRow();
     for (var j = 0; j < columns.length; j++) {
-      var td = basic_render(tr,hero_array[i][columns[j].attr])
-      //var render_this = indicies_obj[columns[j].attr].render(hero_array[i][columns[j].attr].val, columns[j], hero_array[i], hero_array);
-      //render(23, "str", {attr: "str", name: "Stre...}, {name: Abb...}, [{hero} x 100])
-      //var td = render_this(tr, function(x) {
+      var td = basicRender(tr,heroTable[i][columns[j].attr]);
       td.classList.add("column", columns[j].attr);
-      //});
     }
   }
   table.appendChild(tbl);
@@ -279,18 +300,18 @@ var render = function(hero_array, indicies_obj) {
 
 var scroll_pos = 0;
 window.onscroll = function() {
-  var header = document.getElementById("header")
+  var header = document.getElementById("header");
   var offset = window.scrollY - scroll_pos;
   scroll_pos = window.scrollY;
   window.requestAnimationFrame(function() {
     var margintop = window.getComputedStyle(header).marginTop;
     var margint = parseInt(margintop.slice(0, margintop.lastIndexOf("p")));
     if (offset > 0) {
-      margint - offset < -60 ? margint = -60 : margint = (margint - offset)
-      header.style.marginTop = margint + "px"
+      margint - offset < -60 ? margint = -60 : margint = (margint - offset);
+      header.style.marginTop = margint + "px";
     } else if (offset < 0) {
-      margint - offset > 0 ? margint = 0 : margint = (margint - offset)
-      header.style.marginTop = margint + "px"
+      margint - offset > 0 ? margint = 0 : margint = (margint - offset);
+      header.style.marginTop = margint + "px";
     } //else if (window.scrollY > 60 && header.style.marginTop !== "-60px" && offset > 0) {
     // header.style.marginTop = "-60px";
     //}
@@ -301,12 +322,12 @@ document.getElementById("filter").oninput = function(pr) {
   var search = pr.srcElement.value;
   var fill = fuzzy.filter(search, hero_obj, {
     extract: function(el) {
-      return el.name
+      return el.name.val;
     }
   }).map(function(el) {
-    return el.original
-  })
-  render(fill, indicies_obj)
-}
+    return el.original;
+  });
+  render(fill, indicies_obj);
+};
 
 document.onready = render(hero_obj, indicies_obj);
